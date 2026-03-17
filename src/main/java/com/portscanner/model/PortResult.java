@@ -23,7 +23,7 @@ public class PortResult {
 	public PortResult() {
 	}
 
-    // ✅ Constructeur corrigé (pas de "void", initialisation des champs)
+    
     public PortResult(String host, int port, String protocol) {
         this.host = host;
         this.port = port;
@@ -63,7 +63,7 @@ public class PortResult {
     public LocalDateTime getScannedAt() { return scannedAt; }
     public void setScannedAt(LocalDateTime scannedAt) { this.scannedAt = scannedAt; }
 
-    // ✅ Méthodes métier simplifiées
+    
     public boolean isOpen() {
         return "OPEN".equals(this.state);
     }
@@ -72,7 +72,7 @@ public class PortResult {
         return vulnerabilities != null && !vulnerabilities.isEmpty();
     }
 
-    // ✅ toString() complété
+    
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
