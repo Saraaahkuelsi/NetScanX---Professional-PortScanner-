@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Port Scanner</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #1a1a2e;
+            color: #eee;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            background: #16213e;
+            padding: 40px;
+            border-radius: 12px;
+            width: 550px;
+            box-shadow: 0 0 30px rgba(0, 212, 255, 0.2);
+        }
+
+        h1 {
+            color: #00d4ff;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #00d4ff;
+            font-size: 14px;
+        }
+
+        input[type="text"],
+        input[type="number"] {
+            width: 100%;
+            padding: 12px;
+            background: #0f3460;
+            border: 1px solid #00d4ff;
+            border-radius: 6px;
+            color: #eee;
+            font-size: 14px;
+        }
+
+        .radio-group {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .radio-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            background: #0f3460;
+            padding: 10px 20px;
+            border-radius: 6px;
+            border: 1px solid #00d4ff;
+            flex: 1;
+            justify-content: center;
+        }
+
+        .radio-option input { cursor: pointer; }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .options-box {
+            background: #0f3460;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .options-title {
+            color: #00d4ff;
+            font-size: 14px;
+            margin-bottom: 12px;
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            background: #00d4ff;
+            color: #1a1a2e;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        button:hover { background: #0099cc; }
+
+        .warning {
+            background: #ff444422;
+            border: 1px solid #ff4444;
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 20px;
+            font-size: 13px;
+            color: #ff4444;
+            text-align: center;
+        }
+
+        .hidden { display: none; }
+
+        #progressContainer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 20px 40px;
+            background: #16213e;
+            border-bottom: 2px solid #00d4ff;
+            z-index: 100;
+            text-align: center;
+        }
+
+        #progressText {
+            color: #00d4ff;
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+
+        .progress-bar {
+            background: #0f3460;
+            border-radius: 6px;
+            height: 20px;
+            overflow: hidden;
+        }
+
+        #progressFill {
+            background: #00d4ff;
+            height: 100%;
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Barre de progression -->
+    <div id="progressContainer" class="hidden">
+        <p id="progressText">Scan en cours... 0%</p>
+        <div class="progress-bar">
+            <div id="progressFill"></div>
+        </div>
+    </div>
+
+    <div class="container">
+        <h1>🔍 Port Scanner</h1>
+
+        <div class="warning">
+            ⚠️ Scanner uniquement les machines dont vous avez l'autorisation
+        </div>
+
+        <form action="/scan" method="get">
+
+            <!-- Mode de scan -->
+            <div class="form-group">
+                <label>Mode de scan</label>
+                <div class="radio-group">
+                    <label class="radio-option">
+                        <input type="radio" name="mode" value="host"
+                               checked onclick="toggleMode('host')"/>
+                        🖥️ Hôte unique
+                    </label>
+                    <label class="radio-option">
+                        <input type="radio" name="mode" value="subnet"
+                               onclick="toggleMode('subnet')"/>
+                        🌐 Sous-réseau
+                    </label>
+                </div>
+            </div>
+
+            <!-- Champ hôte -->
+            <div class="form-group" id="hostField">
+                <label>Hôte à scanner</label>
+                <input type="text" name="host"
+                       placeholder="ex: 192.168.1.1"/>
+            </div>
+
+            <!-- Champ CIDR -->
+            <div class="form-group hidden" id="cidrField">
+                <label>Sous-réseau CIDR</label>
+                <input type="text" name="cidr"
+                       placeholder="ex: 192.168.1.0/24"/>
+            </div>
+
+            <!-- Plage de ports -->
+            <div class="form-group">
+                <label>Port de début</label>
+                <input type="number" name="startPort"
+                       value="1" min="1" max="65535"/>
+            </div>
+
+            <div class="form-group">
+                <label>Port de fin</label>
+                <input type="number" name="endPort"
+                       value="1024" min="1" max="65535"/>
+            </div>
+
+            <!-- Options -->
+            <div class="options-box">
+                <p class="options-title">⚙️ Options</p>
+
+                <div class="checkbox-group">
+                    <input type="checkbox" name="stealth" id="stealth"/>
+                    <label for="stealth">Mode furtif</label>
+                </div>
+
+                <div class="checkbox-group">
+                    <input type="checkbox" name="bannerGrabbing"
+                           id="bannerGrabbing" checked/>
+                    <label for="bannerGrabbing">Banner Grabbing</label>
+                </div>
+
+                <div class="checkbox-group">
+                    <input type="checkbox" name="cveDetection"
+                           id="cveDetection" checked/>
+                    <label for="cveDetection">Détection CVEs</label>
+                </div>
+            </div>
+
+            <button type="submit">🚀 Lancer le scan</button>
+
+        </form>
+    </div>
+
+    <script>
+        function toggleMode(mode) {
+            if (mode === 'subnet') {
+                document.getElementById('hostField').classList.add('hidden');
+                document.getElementById('cidrField').classList.remove('hidden');
+            } else {
+                document.getElementById('hostField').classList.remove('hidden');
+                document.getElementById('cidrField').classList.add('hidden');
+            }
+        }
+
+        document.querySelector('form').addEventListener('submit', function() {
+            document.getElementById('progressContainer').classList.remove('hidden');
+            document.querySelector('.container').style.filter = 'blur(3px)';
+            document.querySelector('.container').style.opacity = '0.5';
+
+            let shownAlerts = [];
+
+            let interval = setInterval(function() {
+                // Progression
+                fetch('/progress')
+                    .then(r => r.json())
+                    .then(value => {
+                        document.getElementById('progressFill').style.width = value + '%';
+                        document.getElementById('progressText').textContent = 'Scan en cours... ' + value + '%';
+                        if (value >= 100) clearInterval(interval);
+                    });
+
+                // Alertes
+                fetch('/alerts')
+                    .then(r => r.json())
+                    .then(alerts => {
+                        alerts.forEach(alert => {
+                            if (!shownAlerts.includes(alert)) {
+                                shownAlerts.push(alert);
+                                showAlert(alert);
+                            }
+                        });
+                    });
+            }, 500);
+        });
+
+        function showAlert(message) {
+            let parts = message.split(' | ');
+            let port = parts[0];
+            let service = parts[1];
+            let risk = parts[2];
+
+            let div = document.createElement('div');
+            div.style.cssText = `
+                position: fixed;
+                top: 80px;
+                right: 20px;
+                background: ${risk === 'CRITICAL' ? '#ff4444' : '#ff8800'};
+                color: white;
+                padding: 15px 20px;
+                border-radius: 8px;
+                z-index: 200;
+                font-weight: bold;
+                box-shadow: 0 0 20px rgba(255,0,0,0.5);
+                max-width: 300px;
+            `;
+            div.innerHTML = `
+                🚨 Port ${risk} détecté !<br>
+                Port ${port} — ${service}
+            `;
+            document.body.appendChild(div);
+
+            setTimeout(() => div.remove(), 5000);
+        }
+    </script>
+
+</body>
+</html>

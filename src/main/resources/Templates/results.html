@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Scan Results</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #1a1a2e;
+            color: #eee;
+            padding: 30px;
+        }
+
+        h1 {
+            color: #00d4ff;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .info {
+            background: #16213e;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .info p { font-size: 14px; }
+        .info span { color: #00d4ff; font-weight: bold; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+
+        th {
+            background: #0f3460;
+            color: #00d4ff;
+            padding: 12px;
+            text-align: left;
+        }
+
+        td {
+            padding: 10px;
+            border-bottom: 1px solid #333;
+            font-size: 13px;
+        }
+
+        tr:hover { background: #16213e; }
+
+        .OPEN     { color: #00cc44; font-weight: bold; }
+        .FILTERED { color: #ff00ff; font-weight: bold; }
+        .CLOSED   { color: #888888; }
+        .CRITICAL { color: #ff4444; font-weight: bold; }
+        .HIGH     { color: #ff8800; font-weight: bold; }
+        .MEDIUM   { color: #ffcc00; }
+        .LOW      { color: #00cc44; }
+        .UNKNOWN  { color: #888888; }
+
+        .btn {
+            display: inline-block;
+            padding: 12px 30px;
+            background: #00d4ff;
+            color: #1a1a2e;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: bold;
+            margin-bottom: 30px;
+        }
+
+        .btn:hover { background: #0099cc; }
+
+        .no-results {
+            text-align: center;
+            padding: 30px;
+            color: #888;
+        }
+
+        .machine-card {
+            background: #16213e;
+            border: 1px solid #0f3460;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .machine-title {
+            color: #00d4ff;
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>🔍 Scan Results</h1>
+
+    <a href="/" class="btn">← Nouveau Scan</a>
+	<a href="/history" class="btn">📋 Historique</a>
+
+    <!-- ===================== -->
+    <!-- MODE HOTE UNIQUE      -->
+    <!-- ===================== -->
+    <div th:if="${mode == 'host'}">
+
+        <div class="info">
+            <p>🖥️ Host : <span th:text="${report.target.host}"></span></p>
+            <p>📅 Date : <span th:text="${report.startTime}"></span></p>
+            <p>💻 OS : <span th:text="${report.target.operatingSystem}"></span></p>
+            <p>🔑 Scan ID : <span th:text="${report.scanId}"></span></p>
+            <p>🌐 Mode : <span th:text="${online ? 'ONLINE' : 'OFFLINE'}"></span></p>
+        </div>
+
+        <table>
+            <tr>
+                <th>Port</th>
+                <th>Protocol</th>
+                <th>State</th>
+                <th>Service</th>
+                <th>Banner</th>
+                <th>Risk</th>
+                <th>CVEs</th>
+                <th>Response</th>
+            </tr>
+
+            <tr th:each="result : ${report.results}"
+                th:if="${result.state == 'OPEN' or result.state == 'FILTERED'}">
+                <td th:text="${result.port}"></td>
+                <td th:text="${result.protocol}"></td>
+                <td>
+                    <span th:text="${result.state}"
+                          th:class="${result.state}">
+                    </span>
+                </td>
+                <td th:text="${result.serviceName != null ? result.serviceName : '-'}"></td>
+                <td th:text="${result.banner != null ? result.banner : '-'}"></td>
+                <td>
+                    <span th:text="${result.riskLevel != null ? result.riskLevel : 'LOW'}"
+                          th:class="${result.riskLevel != null ? result.riskLevel : 'LOW'}">
+                    </span>
+                </td>
+                <td th:text="${#lists.isEmpty(result.vulnerabilities) ? '-' : result.vulnerabilities}"></td>
+                <td th:text="${result.responseTimeMs + 'ms'}"></td>
+            </tr>
+        </table>
+
+        <div class="no-results"
+             th:if="${#lists.isEmpty(report.results)}">
+            Aucun port ouvert détecté.
+        </div>
+
+    </div>
+
+    <!-- ===================== -->
+    <!-- MODE SOUS-RESEAU      -->
+    <!-- ===================== -->
+    <div th:if="${mode == 'subnet'}">
+
+        <div class="info">
+            <p>🌐 Mode : <span>Scan Sous-Réseau</span></p>
+            <p>💻 Machines actives : <span th:text="${#lists.size(reports)}"></span></p>
+            <p>🌍 Connexion : <span th:text="${online ? 'ONLINE' : 'OFFLINE'}"></span></p>
+        </div>
+
+        <div th:if="${#lists.isEmpty(reports)}" class="no-results">
+            Aucune machine active détectée.
+        </div>
+
+        <div th:each="r : ${reports}" class="machine-card">
+
+            <p class="machine-title">
+                🖥️ <span th:text="${r.target.host}"></span>
+                — OS : <span th:text="${r.target.operatingSystem}"></span>
+            </p>
+
+            <table>
+                <tr>
+                    <th>Port</th>
+                    <th>Protocol</th>
+                    <th>State</th>
+                    <th>Service</th>
+                    <th>Risk</th>
+                    <th>CVEs</th>
+                </tr>
+
+                <tr th:each="result : ${r.results}"
+                    th:if="${result.state == 'OPEN' or result.state == 'FILTERED'}">
+                    <td th:text="${result.port}"></td>
+                    <td th:text="${result.protocol}"></td>
+                    <td>
+                        <span th:text="${result.state}"
+                              th:class="${result.state}">
+                        </span>
+                    </td>
+                    <td th:text="${result.serviceName != null ? result.serviceName : '-'}"></td>
+                    <td>
+                        <span th:text="${result.riskLevel != null ? result.riskLevel : 'LOW'}"
+                              th:class="${result.riskLevel != null ? result.riskLevel : 'LOW'}">
+                        </span>
+                    </td>
+                    <td th:text="${#lists.isEmpty(result.vulnerabilities) ? '-' : result.vulnerabilities}"></td>
+                </tr>
+            </table>
+
+        </div>
+
+    </div>
+
+</body>
+</html>

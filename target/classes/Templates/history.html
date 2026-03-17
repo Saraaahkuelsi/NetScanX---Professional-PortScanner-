@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Historique des scans</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #1a1a2e;
+            color: #eee;
+            padding: 30px;
+        }
+
+        h1 {
+            color: #00d4ff;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 12px 30px;
+            background: #00d4ff;
+            color: #1a1a2e;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: bold;
+            margin-bottom: 30px;
+        }
+
+        .btn:hover { background: #0099cc; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+
+        th {
+            background: #0f3460;
+            color: #00d4ff;
+            padding: 12px;
+            text-align: left;
+        }
+
+        td {
+            padding: 10px;
+            border-bottom: 1px solid #333;
+            font-size: 13px;
+        }
+
+        tr:hover { background: #16213e; }
+
+        .CRITICAL { color: #ff4444; font-weight: bold; }
+        .HIGH     { color: #ff8800; font-weight: bold; }
+        .MEDIUM   { color: #ffcc00; }
+        .LOW      { color: #00cc44; }
+        .UNKNOWN  { color: #888888; }
+
+        .no-results {
+            text-align: center;
+            padding: 30px;
+            color: #888;
+            background: #16213e;
+            border-radius: 10px;
+        }
+
+        .detail-btn {
+            padding: 6px 14px;
+            background: #0f3460;
+            color: #00d4ff;
+            border-radius: 4px;
+            text-decoration: none;
+            font-size: 12px;
+            border: 1px solid #00d4ff;
+        }
+
+        .detail-btn:hover { background: #00d4ff; color: #1a1a2e; }
+    </style>
+</head>
+<body>
+
+    <h1>📋 Historique des scans</h1>
+
+    <a href="/" class="btn">← Accueil</a>
+
+    <!-- Message si vide -->
+    <div class="no-results" th:if="${#lists.isEmpty(history)}">
+        Aucun scan dans l'historique.
+    </div>
+
+    <!-- Tableau historique -->
+    <table th:if="${!#lists.isEmpty(history)}">
+        <tr>
+            <th>Date</th>
+            <th>Host</th>
+            <th>OS</th>
+            <th>Ports ouverts</th>
+            <th>Risque global</th>
+            <th>Détails</th>
+        </tr>
+
+        <tr th:each="r : ${history}">
+            <td th:text="${r.startTime}"></td>
+            <td th:text="${r.target.host}"></td>
+            <td th:text="${r.target.operatingSystem != null ? r.target.operatingSystem : 'Unknown'}"></td>
+            <td th:text="${#lists.size(r.results.?[state == 'OPEN'])}"></td>
+            <td>
+                <span th:text="${r.globalRisk != null ? r.globalRisk : 'LOW'}"
+                      th:class="${r.globalRisk != null ? r.globalRisk : 'LOW'}">
+                </span>
+            </td>
+            <td>
+                <a th:href="@{/history/{id}(id=${r.scanId})}" class="detail-btn">
+                    Voir →
+                </a>
+            </td>
+        </tr>
+    </table>
+
+</body>
+</html>
