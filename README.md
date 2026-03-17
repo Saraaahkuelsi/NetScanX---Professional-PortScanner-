@@ -1,4 +1,4 @@
-# NetScanX 🔍
+# NetScanX 
 ### A Smart Port Scanner
 
 > Professional port scanner with CVE vulnerability detection, OS fingerprinting, firewall detection and Spring Boot web interface.
@@ -6,7 +6,7 @@
 
 
 
-## ✨ Features
+##  Features
 
 -  **TCP/UDP Port Scanning** — Multi-threaded scanning with configurable port ranges
 -  **CVE Detection** — Real-time vulnerability detection using NVD API
